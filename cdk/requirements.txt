@@ -1,0 +1,5 @@
+aws-cdk-lib>=2.147.3
+constructs>=10.0.0,<11.0.0
+cdklabs.generative-ai-cdk-constructs==0.1.263
+chainlit==1.1.402
+pydantic==2.10.1

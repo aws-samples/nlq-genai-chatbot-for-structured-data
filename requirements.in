@@ -1,0 +1,10 @@
+anthropic
+chainlit
+boto3
+SQLAlchemy
+PyAthena
+langchain
+langchain-aws
+langchain-community
+langgraph
+pytz

@@ -55,16 +55,16 @@ LIMIT 5;
 ## AWS Deployment Instructions
 ### Pre-requisites
 
-- Docker Installed. See here for installation instructions: https://docs.docker.com/desktop/ 
-- Amazon Bedrock model access enabled 
-   - **Important**: Follow the [instructions here on enabling model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html). By default need to enable at least `Claude Haiku 3.5` in `us-west-2`. 
-   - You can change the Amazon Bedrock inference region in `cdk/app.py`. I.e. you may deploy the application infrastructure (ECS, VPC etc.) in ap-southeast-2 but use us-west-2 for Amazon Bedrock inference. 
-   - See [here](https://docs.aws.amazon.com/bedrock/latest/userguide/models-regions.html) for model region availability
+1. Docker Installed. See here for installation instructions: https://docs.docker.com/desktop/ 
+2. Amazon Bedrock model access enabled: 
+   - (Requried) Follow the [instructions here on enabling model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html). By default need to enable at least `Claude Haiku 3.5` in `us-west-2`. 
+   - (Optional) You can change the Amazon Bedrock inference region in `cdk/app.py`. I.e. you may deploy the application infrastructure (ECS, VPC etc.) in ap-southeast-2 but use us-west-2 for Amazon Bedrock inference. See [here](https://docs.aws.amazon.com/bedrock/latest/userguide/models-regions.html) for model region availability
    
 - AWS CLI Credentials - see [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html) for instructions
-- AWS CDK CLI: https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html 
-- (Optional) Add your own datasets or more  from Kaggle. Follow Instructions under the `Adding Your Own Data to the S3 Data Lake` section. Otherwise only the `windfarm` dataset is included
+- AWS CDK CLI installed: https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html 
+- (Optional) Add your own datasets or more  from Kaggle. Follow Instructions under the `Adding Your Own Data to the S3 Data Lake` section. Otherwise only the `windfarm` dataset is included. Can add after deployment too. 
 
+### Deployment
 1. Change to the cdk directory:
    ```bash
    cd cdk
@@ -117,24 +117,33 @@ LIMIT 5;
 6. Generate the chainlit auth secret (required for Cognito Auth). Follow either of these approaches:
 
    #### Option A - Automatic Approach 
-   Run this command to automatically generate and save the secret:
-
+   Run the respective command to automatically generate and save the secret:
+   
    ```bash
    # Linux/Mac
    chainlit create-secret | grep "CHAINLIT_AUTH_SECRET" > .env
-
+   ```
+   ```bash
    # Windows
-   chainlit create-secret | Select-String "CHAINLIT_AUTH_SECRET" | Out-File -FilePath ".env"
+   chainlit create-secret | Select-String "CHAINLIT_AUTH_SECRET" | Out-File -FilePath ".env" -Encoding utf8NoBOM
    ```
 
-   #### Option B - Manual Approach (If Option A fails):
 
+   NOTE: Ignore any warnings/errors like below:
+   ```
+   WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+   E0000 00:00:1738205048.894250    2795 init.cc:232] grpc_wait_for_shutdown_with_timeout() timed out.
+   ```
+   
+
+   #### Option B - Manual Approach (If Option A fails):
+   1. If it exists, delete the existing `cdk/.env` file 
    1. Generate the secret:
       ```bash
       chainlit create-secret
       ```
 
-   2. Copy the generated secret (format: CHAINLIT_AUTH_SECRET="XXXXX")
+   2. Copy only the line containing the generated secret (i.e. CHAINLIT_AUTH_SECRET="XXXXX")
 
    3. Create a new file at `cdk/.env` and paste the secret into it. 
    
@@ -145,8 +154,7 @@ LIMIT 5;
    cdk bootstrap
    ```
 
-8. Update ECR CDK Repo Tag Immutability 
-   Set the Tag immutability to Mutable:
+8. Update the CDK generated ECR Repo. Change the tag immutability setting to `mutable`:
    ```
    aws ecr put-image-tag-mutability --repository-name $(aws ecr describe-repositories --query 'repositories[?contains(repositoryName, `cdk-hnb659fds-container-assets`)].repositoryName' --output text) --image-tag-mutability MUTABLE
    ```
@@ -161,21 +169,28 @@ LIMIT 5;
 ### Post Deployment Steps 
 1. Run the Glue Crawler in the AWS Console: https://console.aws.amazon.com/glue/home#/v2/data-catalog/crawlers 
 
-2. Create a Cognito User to access the site, access via the CognitoUserPoolConsoleLink in the CloudFormation Outputs. 
+2. In order to access the site, create a Cognito user via the CognitoUserPoolConsoleLink in the CloudFormation Outputs. 
 
 3. Access the chatbot at the CloudFrontDomain in the CloudFormation outputs.
 
-
-   ##### Ask questions! Examples include:
+4. Ask questions of the chatbot! Examples include:
 
    - How many turbines are in the database and what are their asset ids?
-   - Which of these turbines has had the highest average temperature and what was it?
-   - How was this average temp determined?
+      - Which of these turbines has had the highest average temperature and what was it?
+      - How was this average temp determined?
    - Which turbine has the highest vibration value, and when was it recorded?
-   - Is this statistically anomalous, compared to the average value for turbine3?
-   - Why would a turbine be producing more vibrations than usual?
-   - When was the turbine last serviced?
-   - What city would turbine3 be located in, based on long and lat values for the turbine?
+      - Is this statistically anomalous, compared to the average value for turbine3?
+      - Why would a turbine be producing more vibrations than usual?
+      - When was the turbine last serviced?
+      - What city would turbine3 be located in, based on long and lat values for the turbine?
+
+
+## Cleanup Instructions
+Note: This will delete all resources within the stacks, including S3 buckets and all data included inside them. 
+1. Run 
+   ```
+   cdk destory --all
+   ```
 
 ## Adding Your Own Data to the S3 Data Lake
 
@@ -184,7 +199,9 @@ LIMIT 5;
    mkdir cdk/example-data/<new-table-name>
    ```
 
-2. Add your CSV, JSON Lines etc. within this new folder.
+2. Add your CSV, JSON Lines etc. within this new folder. I.e. `~/cdk/example-data/health-data/heath-stats.csv`.
+   
+   Note: it doesn't have to be a single file, it could be multiple (i.e. Parquet) files in the folder. Similar to the wind farm data. 
 
 3. Re-run CDK Deploy:
    ```
@@ -219,18 +236,20 @@ Already included:
 ## Prompt Engineering
 The LLM system prompts are generalised to work with any dataset - howver you may find it beneficial to customise the prompts to your dataset.
 
-Edit the prompts in the [AWS Console under Bedrock Prompt Management](https://console.aws.amazon.com/bedrock/home#/prompt-management)
+Edit the prompts in eihter:
+- The `cdk/prompts_stack.py` and redeploy with `cdk deploy` (Recommended)
+- The [AWS Console under Bedrock Prompt Management](https://console.aws.amazon.com/bedrock/home#/prompt-management)
 
 ## Local Development
 
-Retrieve the Athena Connection String and Bedrock Prompt ID from the CloudFormation Outputs. Set up the required environment variables and run the application:
 
-1. From the root folder, install Requirements
+1. From the root folder of the project repository, install requirements.
 ```
 pip install -r requirements.txt
 ```
 
-2. Create a `.env` file in the top level folder. You can easily find these in the CloudFormation Outputs.
+2. Create a `.env` file in the top level folder. You can find the required environment variables from the CloudFormation Outputs.
+
 ```
 ATHENA_CONNECTION_STRING="<PASTE_ATHENA_CONNECTION_STRING_HERE>"
 BEDROCK_PROMPT_ID_1="ABC123456" 

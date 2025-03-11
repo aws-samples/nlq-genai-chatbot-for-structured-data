@@ -228,8 +228,8 @@ Already included:
 
 ## Connecting to RDS Database
 ### Required Steps:
-1. Update the `db_connection_string` parameter in `cdk/cdk/main_stack.py`. [Click here to go to the specific line](cdk/cdk/main_stack.py#56)
-2. Update `dialect` to your DB's dialect in `chainlit-app.py`. [Click here to go to the specific line](chainlit-app.py#186)
+1. Update the `db_connection_string` parameter in `cdk/cdk/main_stack.py`. [Click here to go to the specific line](cdk/cdk/main_stack.py#L56)
+2. Update `dialect` to your DB's dialect in `chainlit-app.py`. [Click here to go to the specific line](chainlit-app.py#L186)
 3. Ensure the Fargate task has necessary IAM permissions and networking to access your RDS instance
 4. Configure RDS security groups to allow access from the Fargate service 
 5. Re-deploy using `cdk deploy`

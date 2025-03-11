@@ -53,7 +53,7 @@ class MainStack(Stack):
             access_logs_bucket=storage.access_logs_bucket,
             data_bucket=storage.data_bucket,
             athena_results_bucket=storage.athena_results_bucket,
-            athena_connection_string=athena_connection_string,
+            db_connection_string=athena_connection_string,
             athena_workgroup_name=analytics.athena_workgroup_name,
             athena_database_name=analytics.athena_database_name,
             data_oriented_prompt_id=prompts.data_oriented_prompt.prompt_id,

@@ -15,7 +15,7 @@ import os
 
 class FargateStack(NestedStack):
     def __init__(self, scope: Construct, construct_id: str, vpc: ec2.Vpc,
-                 access_logs_bucket, data_bucket, athena_results_bucket, athena_connection_string: str,
+                 access_logs_bucket, data_bucket, athena_results_bucket, db_connection_string: str,
                  athena_workgroup_name: str, athena_database_name: str, data_oriented_prompt_id: str, business_oriented_prompt_id: str,
                  aws_region_for_bedrock_inference: str = 'us-west-2', ** kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -136,7 +136,7 @@ class FargateStack(NestedStack):
                 task_role=task_role,
                 environment={
                     # Non-sensitive values as regular environment variables
-                    "ATHENA_CONNECTION_STRING": athena_connection_string,
+                    "DB_CONNECTION_STRING": db_connection_string,
                     "BEDROCK_PROMPT_ID_1": data_oriented_prompt_id,
                     "BEDROCK_PROMPT_ID_2": business_oriented_prompt_id,
                     "AWS_REGION_FOR_BEDROCK_INFERENCE": aws_region_for_bedrock_inference

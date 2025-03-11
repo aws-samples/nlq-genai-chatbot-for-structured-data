@@ -3,6 +3,7 @@ from aws_cdk import aws_s3 as s3
 from constructs import Construct
 from cdklabs.generative_ai_cdk_constructs import bedrock
 
+
 class PromptsStack(NestedStack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -68,7 +69,7 @@ Use the FLOAT type in DDL statements like CREATE TABLE and the REAL type in SQL 
             template_configuration={
                 "text": """
 You are a data analyst that analyses data in a database, and provides stats and analysis to users.
-You have access to a Trino database, which contains multiple tables of data.
+You have access to a {{dialect}} database, which contains multiple tables of data.
 The current date and time is: {{current_datetime}}
 The current Unix epoch time (in milliseconds) is: {{current_epoch}}
 
@@ -82,7 +83,8 @@ Follow the below steps when querying the database:
 
 4. Look at the results of the query and return the answer to the question directly in plain english sentences.
 
-5. Do NOT describe the SQL query you used to arrive at the result or use XML tags. Do NOT skip this step.
+5. At the end of your answer output the final SQL you used. Do not include SQL that returned errors.
+
 
 Here are some extra tips you can use if you get stuck:
 - Do not use the DATE_SUB function in your query, use the date_add function instead using the following format:
@@ -90,6 +92,8 @@ Here are some extra tips you can use if you get stuck:
 Use the FLOAT type in DDL statements like CREATE TABLE and the REAL type in SQL functions like SELECT CAST.
 
 - Always convert unix epoch time to local time in your answers.
+- Do NOT use XML tags
+
 
 """.format(SQL_DATE_EXAMPLE),
             },

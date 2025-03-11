@@ -50,8 +50,6 @@ LIMIT 5;
 - Seamlessly integrate with existing AWS infrastructure
 - Scale effortlessly with serverless architecture
 
-
-
 ## AWS Deployment Instructions
 ### Pre-requisites
 
@@ -113,7 +111,6 @@ LIMIT 5;
    pip install -r requirements.txt
    ```
 
-
 6. Generate the chainlit auth secret (required for Cognito Auth). Follow either of these approaches:
 
    #### Option A - Automatic Approach 
@@ -128,13 +125,11 @@ LIMIT 5;
    chainlit create-secret | Select-String "CHAINLIT_AUTH_SECRET" | Out-File -FilePath ".env" -Encoding utf8NoBOM
    ```
 
-
    NOTE: Ignore any warnings/errors like below:
    ```
    WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
    E0000 00:00:1738205048.894250    2795 init.cc:232] grpc_wait_for_shutdown_with_timeout() timed out.
    ```
-   
 
    #### Option B - Manual Approach (If Option A fails):
    1. If it exists, delete the existing `cdk/.env` file 
@@ -166,7 +161,7 @@ LIMIT 5;
    ```
    You may need to accept IAM statement changes by entering `y` or `n`. 
 
-### Post Deployment Steps 
+### Post Deployment Steps (Required)
 1. Run the Glue Crawler in the AWS Console: https://console.aws.amazon.com/glue/home#/v2/data-catalog/crawlers 
 
 2. In order to access the site, create a Cognito user via the CognitoUserPoolConsoleLink in the CloudFormation Outputs. 
@@ -184,12 +179,11 @@ LIMIT 5;
       - When was the turbine last serviced?
       - What city would turbine3 be located in, based on long and lat values for the turbine?
 
-
 ## Cleanup Instructions
 Note: This will delete all resources within the stacks, including S3 buckets and all data included inside them. 
-1. Run 
+1. From the `~/cdk` folder, run:
    ```
-   cdk destory --all
+   cdk destroy --all
    ```
 
 ## Adding Your Own Data to the S3 Data Lake
@@ -232,6 +226,37 @@ Already included:
 - what were the latest turbine temps?
 - what was the average temp for turbine 1 on 20 August?
 
+## Connecting to RDS Database
+### Required Steps:
+1. Update the `db_connection_string` parameter in `cdk/cdk/main_stack.py`. [Click here to go to the specific line](cdk/cdk/main_stack.py#56)
+2. Update `dialect` to your DB's dialect in `chainlit-app.py`. [Click here to go to the specific line](chainlit-app.py#186)
+3. Ensure the Fargate task has necessary IAM permissions and networking to access your RDS instance
+4. Configure RDS security groups to allow access from the Fargate service 
+5. Re-deploy using `cdk deploy`
+
+The connection string follows this format:
+```
+{dialect}://{username}:{password}@{host}:{port}/{database_name}
+```
+
+Example:
+```python
+db_connection_string = "postgresql://myuser:mypassword@my-database.xxxxx.region.rds.amazonaws.com:5432/mydatabase"
+```
+
+### Security Considerations:
+1. **Never commit credentials to version control**
+2. Use AWS Secrets Manager for storing database credentials
+3. Ensure your RDS security group allows inbound traffic from the Fargate service's security group
+4. Use SSL/TLS for database connections when possible
+5. Consider using [IAM Authentication](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Connecting.html)
+
+
+### Supported Database Types:
+- PostgreSQL
+- MySQL
+- Amazon Aurora
+- Other SQL databases supported by SQLAlchemy
 
 ## Prompt Engineering
 The LLM system prompts are generalised to work with any dataset - howver you may find it beneficial to customise the prompts to your dataset.
@@ -241,7 +266,6 @@ Edit the prompts in eihter:
 - The [AWS Console under Bedrock Prompt Management](https://console.aws.amazon.com/bedrock/home#/prompt-management)
 
 ## Local Development
-
 
 1. From the root folder of the project repository, install requirements.
 ```
@@ -266,8 +290,6 @@ CHAINLIT_AUTH_SECRET="<CHAINLIT_SECRET>"
 chainlit run -w chainlit-app.py
 ```
 
-
-
 ## Architecture
 ![Architecture](./architecture.png)
 
@@ -290,4 +312,3 @@ chainlit run -w chainlit-app.py
   
 #### NOTES: 
 1. Customers should consider using [AWS WAF](https://aws.amazon.com/waf/) with Amazon CloudFront and their Application Load Balancers (ALB), it is a web application firewall that helps protect web applications from attacks by allowing you to configure rules that allow, block, or monitor (count) web requests.
-

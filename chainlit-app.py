@@ -28,7 +28,7 @@ TIMEZONE = pytz.timezone("Australia/Sydney")
 # Environment Variables
 prompt_id_1 = os.environ['BEDROCK_PROMPT_ID_1']  # Data oriented prompt
 prompt_id_2 = os.environ['BEDROCK_PROMPT_ID_2']  # Business oriented prompt
-connection_string = os.environ['ATHENA_CONNECTION_STRING']
+connection_string = os.environ['DB_CONNECTION_STRING']
 region = os.environ['AWS_REGION_FOR_BEDROCK_INFERENCE']
 
 bedrock_runtime = boto3.client(
@@ -47,7 +47,7 @@ QUESTIONS = [
 ]
 
 
-@ cl.oauth_callback
+@cl.oauth_callback
 def oauth_callback(
     provider_id: str,
     token: str,
@@ -57,7 +57,7 @@ def oauth_callback(
     return default_user
 
 
-@ cl.on_chat_start
+@cl.on_chat_start
 async def start():
     thread_id = str(uuid.uuid4())
     cl.user_session.set("thread_id", thread_id)
@@ -153,7 +153,7 @@ async def process_question(question):
     await on_message(message)
 
 
-@ cl.on_settings_update
+@cl.on_settings_update
 async def on_settings_update(settings):
     cl.user_session.set("settings", settings)
     await setup_agent(settings)
@@ -210,7 +210,7 @@ async def setup_agent(settings):
 
     # Create the epoch conversion tool
 
-    @ tool
+    @tool
     def epoch_to_local(epoch_time: int):
         """Use this to convert Unix epoch time (in milliseconds) to local time."""
         try:
@@ -236,7 +236,7 @@ async def setup_agent(settings):
     cl.user_session.set("runnable", agent_executor)
 
 
-@ cl.on_message
+@cl.on_message
 async def on_message(message: cl.Message):
     agent_executor = cl.user_session.get("runnable")
     thread_id = cl.user_session.get("thread_id")
